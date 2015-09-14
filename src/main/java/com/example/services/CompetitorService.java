@@ -31,7 +31,7 @@ import org.json.simple.JSONObject;
 @Produces(MediaType.APPLICATION_JSON)
 public class CompetitorService {
 
-    @PersistenceContext(unitName = "AplicacionMundialPU")
+    @PersistenceContext(unitName = "CronPU")
     EntityManager entityManager;
 
     @PostConstruct
