@@ -1,10 +1,19 @@
 package com.example;
 
+import static com.example.JobExample.sendMail;
 import javax.persistence.EntityManager;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.webapp.WebAppContext;
 
+import static org.quartz.JobBuilder.newJob;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import static org.quartz.SimpleScheduleBuilder.repeatHourlyForever;
+import org.quartz.Trigger;
+import static org.quartz.SimpleScheduleBuilder.repeatSecondlyForever;
+import static org.quartz.TriggerBuilder.newTrigger;
+import org.quartz.impl.StdSchedulerFactory; 
 /**
  *
  * This class launches the web application in an embedded Jetty container.
@@ -18,35 +27,18 @@ public class Main {
      * @param args
      */
     public static void main(String[] args) throws Exception{
-        String webappDirLocation = "src/main/webapp/";
-
-        // The port that we should run on can be set into an environment variable
-        // Look for that variable and default to 8080 if it isn't there.
-        String webPort = System.getenv("PORT");
-        if (webPort == null || webPort.isEmpty()) {
-            webPort = "8080";
-        }
-
-        Server server = new Server(Integer.valueOf(webPort));
-        WebAppContext root = new WebAppContext();
-
-        root.setContextPath("/");
-        root.setDescriptor(webappDirLocation + "/WEB-INF/web.xml");
-        root.setResourceBase(webappDirLocation);
+//        Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+//        scheduler.start();
+//        JobDetail jobDetail = newJob(JobExample.class).build();
+// 
+//        Trigger trigger = newTrigger()
+//                .startNow()
+//                .withSchedule(repeatSecondlyForever(2))
+//                .build();
+// 
+//        scheduler.scheduleJob(jobDetail, trigger);
         
-        PersistenceManager.getInstance().getEntityManagerFactory();
-
-        // Parent loader priority is a class loader setting that Jetty accepts.
-        // By default Jetty will behave like most web containers in that it will
-        // allow your application to replace non-server libraries that are part of the
-        // container. Setting parent loader priority to true changes this behavior.
-        // Read more here: http://wiki.eclipse.org/Jetty/Reference/Jetty_Classloading
-        root.setParentLoaderPriority(true);
-
-        server.setHandler(root);
-
-        server.start();
-        server.join();
+        JobExample.sendMail(5, "j.bautista.m13@gmail.com", "Jairo", "Bautista Mora", "j.bautista.m13@gmail.com");
     }
 
 }
