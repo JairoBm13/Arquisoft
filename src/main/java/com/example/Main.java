@@ -27,18 +27,16 @@ public class Main {
      * @param args
      */
     public static void main(String[] args) throws Exception{
-//        Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-//        scheduler.start();
-//        JobDetail jobDetail = newJob(JobExample.class).build();
-// 
-//        Trigger trigger = newTrigger()
-//                .startNow()
-//                .withSchedule(repeatSecondlyForever(2))
-//                .build();
-// 
-//        scheduler.scheduleJob(jobDetail, trigger);
+        Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+        scheduler.start();
+        JobDetail jobDetail = newJob(JobExample.class).build();
+ 
+        Trigger trigger = newTrigger()
+                .startNow()
+                .withSchedule(repeatHourlyForever(24))
+                .build();
+ 
+        scheduler.scheduleJob(jobDetail, trigger);
         
-        JobExample.sendMail(5, "j.bautista.m13@gmail.com", "Jairo", "Bautista Mora", "j.bautista.m13@gmail.com");
     }
-
 }

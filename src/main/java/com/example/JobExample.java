@@ -6,18 +6,19 @@
 package com.example;
 
 import com.example.models.Competitor;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
-import org.codemonkey.simplejavamail.Email;
-import org.codemonkey.simplejavamail.Mailer;
-import org.codemonkey.simplejavamail.TransportStrategy;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -28,11 +29,13 @@ import org.quartz.JobExecutionException;
  */
 public class JobExample implements Job{
     
-    private static final String USERNAME = "j.bautista.m13@outlook.com";
-    private static final String PASSWORD = "emi13021996j1310";
+    private static final String USERNAME = "j.bautista.m13@gmail.com";
+    private static final String PASSWORD = "emi13021996j13";
 
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
-	sendMail(5, "j.bautista.m13@gmail.com", "Jairo", "Bautista Mora", "j.bautista.m13@gmail.com");
+        int competitors = getNumberCompetitors();
+	Competitor comp = getWinnerCompetitors();
+        sendMail(competitors, comp, "j.bautista.m13@gmail.com", "Jairo", "Bautista Mora", "j.bautista.m13@gmail.com");
 }
     
     public int getNumberCompetitors(){
@@ -54,6 +57,29 @@ public class JobExample implements Job{
 		return numberCompetitors;
     }
     
+    public Competitor getWinnerCompetitors(){
+	EntityManagerFactory emf = Persistence.createEntityManagerFactory("CronPU", System.getProperties());
+	EntityManager entityManager = emf.createEntityManager();
+	List<Competitor> competitors;
+        Competitor comp;
+        try {
+            Query q = entityManager.createQuery("select u from Competitor u order where u.winner=FALSE by u.surname ASC");
+            competitors = q.getResultList();
+            comp = competitors.get((int)(Math.random()*competitors.size()));
+            comp.setWinner(true);
+            Query q2 = entityManager.createNamedQuery("update Competitor SET winner=TRUE where id="+comp.getId());
+            q2.executeUpdate();
+            emf.close();
+            return comp;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            entityManager.clear();
+            entityManager.close();
+        }  
+        return null;
+    }
+    
     /**
  * Envía un correo electrónico notificando el número de competidores en 
  * la base de datos de Competitors, aplicación desplegada en Heroku. El 
@@ -69,30 +95,36 @@ public class JobExample implements Job{
  * @param  recipentEmail el email del administrador del sistema
  */
  
-public static void sendMail(int numberCompetitors, String from, String recipentName, String recipentLastName, String recipentEmail){
-	final Email email = new Email();
-	email.setFromAddress("Admin", from);
-	email.setSubject("Numero de Concursantes");
-	email.addRecipient(recipentName + " " + recipentLastName, recipentEmail, Message.RecipientType.TO);
-	email.setText("La cantidad de concursantes inscritos son: " + numberCompetitors);
- 
-	// USERNAME es una constante con el username de Gmail
-	// PASSWORD es una constante con la contraseña de correo de la cuenta correspondiente al email de from
-	new Mailer("smtp.outlook.com", 587, USERNAME, PASSWORD, TransportStrategy.SMTP_TLS).sendMail(email);
-//        String host = "localhost";
-//int port = 443;
-//String user = "BruceWayne@example.org";
-//String password = "S3cr3tP4ss";
-//Session session = Session.getDefaultInstance(props);
-//session.setDebug(true);
-//
-//Message msg = new MimeMessage(session);
-//
-//msg.setFrom(new InternetAddress(user, "Dark Knight"));
-//msg.setSubject("Hello Selina");
-//msg.setText("Do you want to have diner ?");
-//Transport transport = session.getTransport("smtp");
-//transport.connect(host, port, user, password);
-//transport.sendMessage(msg, msg.getAllRecipients());
-} 
+public static void sendMail(int numberCompetitors,Competitor comp, String from, String recipentName, String recipentLastName, String recipentEmail){
+	Properties props = new Properties();
+	props.put("mail.smtp.auth", "true");
+	props.put("mail.smtp.starttls.enable", "true");
+	props.put("mail.smtp.host", "smtp.gmail.com");
+	props.put("mail.smtp.port", "587");
+
+        Session session = Session.getInstance(props,
+		  new javax.mail.Authenticator() {
+			protected PasswordAuthentication getPasswordAuthentication() {
+				return new PasswordAuthentication(USERNAME, PASSWORD);
+			}
+		  });
+
+		try {
+
+			Message message = new MimeMessage(session);
+			message.setFrom(new InternetAddress(USERNAME));
+			message.setRecipients(Message.RecipientType.TO,
+				InternetAddress.parse("j.bautista.m13@gmail.com"));
+			message.setSubject("Competidores");
+			message.setText("La cantidad de concursantes inscritos son: " + numberCompetitors
+                        + "\n El ganador fue " + comp.getName() + " con id "+comp.getId());
+
+			Transport.send(message);
+
+			System.out.println("Done");
+
+		} catch (MessagingException e) {
+			throw new RuntimeException(e);
+		}
+    } 
 }
